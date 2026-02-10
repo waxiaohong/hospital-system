@@ -39,11 +39,14 @@ type Patient struct {
 
 // Booking 挂号记录
 type Booking struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	PatientID uint      `json:"patient_id"`
-	DoctorID  uint      `json:"doctor_id"` // 指向 User.ID
-	Status    string    `json:"status"`    // pending (待诊), completed (已诊)
-	CreatedAt time.Time `json:"created_at"`
+	ID          uint      `gorm:"primaryKey" json:"id"`
+	PatientName string    `json:"patient_name"` // 新增：直接存名字
+	Age         int       `json:"age"`          // 新增：年龄
+	Gender      string    `json:"gender"`       // 新增：性别
+	Department  string    `json:"department"`   // 新增：科室
+	DoctorID    uint      `json:"doctor_id"`    // 关联医生
+	Status      string    `json:"status"`       // Pending, Completed
+	CreatedAt   time.Time `json:"created_at"`
 }
 
 // MedicalRecord 电子病历
