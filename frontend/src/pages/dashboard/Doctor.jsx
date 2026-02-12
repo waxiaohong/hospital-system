@@ -53,8 +53,8 @@ const Doctor = () => {
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      // 发送给后端：生成病历 + 生成订单 [cite: 191]
-      await request.post('/dashboard/doctor/records', {
+      // 发送给后端：生成病历 + 生成订单
+      await request.post('/dashboard/doctor/medical_records', {
         booking_id: currentPatient.id,
         diagnosis: values.diagnosis,
         medicine_id: values.medicine_id,

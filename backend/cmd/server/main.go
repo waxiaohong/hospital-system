@@ -29,7 +29,7 @@ func main() {
 	var adminCount int64
 	database.DB.Model(&model.User{}).Where("role = ?", "global_admin").Count(&adminCount)
 	if adminCount == 0 {
-		log.Println("⚠️ 检测到系统中没有管理员，正在初始化默认账号...")
+		log.Println("系统中没有管理员，正在初始化默认账号...")
 		defaultAdmin := model.User{
 			Username: "admin",
 			Password: "admin123", // 会自动加密
@@ -39,7 +39,7 @@ func main() {
 		if err := database.DB.Create(&defaultAdmin).Error; err != nil {
 			log.Fatalf("初始化管理员失败: %v", err)
 		}
-		log.Println("✅ 默认管理员已创建 -> 账号: admin / 密码: admin123")
+		log.Println("默认管理员已创建 -> 账号: admin / 密码: admin123")
 	}
 
 	// 5. 初始化 Gin 路由
@@ -100,17 +100,17 @@ func main() {
 		doctor := dash.Group("/doctor")
 		doctor.Use(middleware.RoleMiddleware("doctor", "org_admin", "global_admin"))
 		{
-			doctor.GET("/patients", api.GetPendingPatients)  // 左侧：候诊列表 (Status=Pending)
-			doctor.POST("/records", api.SubmitMedicalRecord) // 右侧：提交诊断 -> 生成订单
+			doctor.GET("/patients", api.GetPendingPatients)          // 左侧：候诊列表 (Status=Pending)
+			doctor.POST("/medical_records", api.SubmitMedicalRecord) // 右侧：提交诊断 -> 生成订单
 		}
 
-		// [Group 4] 历史病历 (/record)
+		// [Group 4] 病历 (/medical_record)
 		// 权限: 医生, 挂号员, 财务 (不同角色视角不同，此处简化为都有权查看)
-		// 对应图中: /record -> 展示问诊记录
-		record := dash.Group("/record")
-		record.Use(middleware.RoleMiddleware("general_user", "doctor", "registration", "finance", "org_admin", "global_admin"))
+		// 对应图中: /medical_record -> 展示问诊记录
+		medical_record := dash.Group("/medical_record")
+		medical_record.Use(middleware.RoleMiddleware("general_user", "doctor", "registration", "finance", "org_admin", "global_admin"))
 		{
-			record.GET("/", api.GetMedicalRecords)
+			medical_record.GET("/", api.GetMedicalRecords)
 		}
 
 		// [Group 5] 物资/库房 (/storehouse)

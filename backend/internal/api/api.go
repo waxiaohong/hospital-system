@@ -450,8 +450,8 @@ func AddMedicine(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"msg": "添加药品成功", "data": med})
 }
 
-// --- 记录 (Record) ---
-// 对应页面：/record
+// --- 记录 (medical_record) ---
+// 对应页面：/medical_record
 
 // 定义返回结构，方便前端显示医生名字和患者名字
 type MedicalRecordDetail struct {

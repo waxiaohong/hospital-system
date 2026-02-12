@@ -38,8 +38,8 @@ export const menuConfig = [
         roles: [ROLES.STOREKEEPER, ROLES.ORG_ADMIN, ROLES.GLOBAL_ADMIN]
     },
     {
-        path: 'record',
-        label: '记录',
+        path: 'medical_record',
+        label: '档案中心',
         icon: <FileText size={18} />,
         roles: Object.values(ROLES)
     },

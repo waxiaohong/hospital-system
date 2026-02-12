@@ -3,7 +3,7 @@ import { Table, Card, Tag, Input, Button, message } from 'antd';
 import { FileTextOutlined, SearchOutlined } from '@ant-design/icons';
 import request from '../../utils/request';
 
-const Record = () => {
+const Medical_record = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -12,10 +12,11 @@ const Record = () => {
   const fetchRecords = async () => {
     setLoading(true);
     try {
-      const res = await request.get('/dashboard/record');
+      const res = await request.get('/dashboard/medical_record');
       setRecords(res.data || []);
     } catch (error) {
       message.error('获取病历失败');
+      console.log(error)
     } finally {
       setLoading(false);
     }
@@ -79,4 +80,4 @@ const Record = () => {
   );
 };
 
-export default Record;
+export default Medical_record;

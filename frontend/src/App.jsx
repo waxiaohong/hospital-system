@@ -11,7 +11,7 @@ import Register from './pages/Register';
 import Overview from './pages/dashboard/Overview';
 import Bookings from './pages/dashboard/Bookings';
 import Payment from './pages/dashboard/Payment';
-import Record from './pages/dashboard/Record';
+import Medical_record from './pages/dashboard/Medical_record';
 import Doctor from './pages/dashboard/Doctor';
 import Storehouse from './pages/dashboard/Storehouse';
 import Users from './pages/dashboard/Users';
@@ -33,7 +33,7 @@ function App() {
         }>
           {/* 通用子路由 */}
           <Route path="overview" element={<Overview />} />
-          <Route path="record" element={<Record />} />
+          <Route path="medical_record" element={<Medical_record />} />
 
           {/* === 挂号模块 === */}
           <Route path="bookings" element={
