@@ -453,52 +453,61 @@ func AddMedicine(c *gin.Context) {
 // --- 记录 (Record) ---
 // 对应页面：/record
 
-// GetRecords 获取所有电子病历档案
-func GetRecords(c *gin.Context) {
-	var records []model.MedicalRecord
+// 定义返回结构，方便前端显示医生名字和患者名字
+type MedicalRecordDetail struct {
+	model.MedicalRecord
+	PatientName string `json:"patient_name"`
+	DoctorName  string `json:"doctor_name"`
+}
 
-	// Preload("Booking") 会自动填充 Booking 字段，这样我们就能拿到病人名字了
-	// 前提是 model.MedicalRecord 里定义了 Booking 关联，或者我们手动查
-	// 这里为了简单稳妥，我们用更直接的“连表查询”思路，或者先查出来再组装
-	// 但最最简单的方式是：直接查出来，前端展示简单的 Presciption 即可
-	// 为了更完美，我们稍微改一下查询逻辑：
+// GetMedicalRecords 获取电子病历列表
+func GetMedicalRecords(c *gin.Context) {
+	role := c.GetString("role")
+	userID := c.GetUint("user_id")
 
-	// 1. 查询所有病历，按时间倒序
-	if err := database.DB.Order("created_at desc").Find(&records).Error; err != nil {
+	var results []MedicalRecordDetail
+
+	// 1. 基础查询：关联 bookings 表以获取患者信息
+	// 假设你的 User 表里存了医生名字，这里也可以关联 users 表获取医生名
+	// 这里简化处理，先只关联 bookings
+	db := database.DB.Table("medical_records").
+		Select("medical_records.*, bookings.patient_name").
+		Joins("JOIN bookings ON bookings.id = medical_records.booking_id").
+		Order("medical_records.created_at desc")
+
+	// 2. 权限分流
+	switch role {
+	case "general_user":
+		// --- 情况 A: 普通患者 ---
+		// 只能看属于自己的病历
+		var currentUser model.User
+		if err := database.DB.First(&currentUser, userID).Error; err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "用户身份异常"})
+			return
+		}
+		// 核心逻辑：只查 bookings.patient_name 等于当前用户名的记录
+		db = db.Where("bookings.patient_name = ?", currentUser.Username)
+
+	case "doctor":
+		// --- 情况 B: 医生 ---
+		// 医生通常可以看到自己开出的病历，或者整个科室的病历
+		// 这里演示：只看自己作为医生经手的 (依赖 bookings.doctor_id)
+		db = db.Where("bookings.doctor_id = ?", userID)
+
+		// 如果你希望医生能看全院病历以便会诊，这里可以留空，不做 where 限制
+
+	case "admin", "global_admin":
+		// --- 情况 C: 管理员 ---
+		// 查看所有，不做限制
+	}
+
+	// 3. 执行查询
+	if err := db.Scan(&results).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取病历失败"})
 		return
 	}
 
-	// 2. 这里的 records 里只有 BookingID，没有病人名字。
-	// 为了让前端显示名字，我们需要手动补全，或者前端再发请求。
-	// 鉴于你是全栈，我们用一种“笨办法”但绝对不出错：
-	// 我们定义一个返回给前端的结构体
-	type RecordResponse struct {
-		ID           uint      `json:"id"`
-		PatientName  string    `json:"patient_name"`
-		Diagnosis    string    `json:"diagnosis"`
-		Prescription string    `json:"prescription"`
-		CreatedAt    time.Time `json:"created_at"`
-		DoctorName   string    `json:"doctor_name"` // 也可以加上医生名字
-	}
-
-	var response []RecordResponse
-
-	for _, r := range records {
-		var booking model.Booking
-		// 根据 BookingID 查挂号单，拿到病人名字
-		database.DB.First(&booking, r.BookingID)
-
-		response = append(response, RecordResponse{
-			ID:           r.ID,
-			PatientName:  booking.PatientName, // 核心：拿到名字
-			Diagnosis:    r.Diagnosis,
-			Prescription: r.Prescription,
-			CreatedAt:    r.CreatedAt,
-		})
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": response})
+	c.JSON(http.StatusOK, gin.H{"data": results})
 }
 
 // --- 用户管理 (Users) ---

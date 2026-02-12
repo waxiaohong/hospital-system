@@ -108,9 +108,9 @@ func main() {
 		// 权限: 医生, 挂号员, 财务 (不同角色视角不同，此处简化为都有权查看)
 		// 对应图中: /record -> 展示问诊记录
 		record := dash.Group("/record")
-		record.Use(middleware.RoleMiddleware("doctor", "registration", "finance", "org_admin", "global_admin"))
+		record.Use(middleware.RoleMiddleware("general_user", "doctor", "registration", "finance", "org_admin", "global_admin"))
 		{
-			record.GET("/", api.GetRecords)
+			record.GET("/", api.GetMedicalRecords)
 		}
 
 		// [Group 5] 物资/库房 (/storehouse)
