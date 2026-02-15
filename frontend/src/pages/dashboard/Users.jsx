@@ -10,8 +10,14 @@ import {
   Input,
   Select,
   Space,
+  Popconfirm,
 } from "antd";
-import { UserOutlined, PlusOutlined, EditOutlined } from "@ant-design/icons";
+import { 
+  UserOutlined, 
+  PlusOutlined, 
+  EditOutlined, 
+  DeleteOutlined 
+} from "@ant-design/icons";
 import request from "../../utils/request";
 
 const Users = () => {
@@ -46,19 +52,31 @@ const Users = () => {
     setIsModalOpen(true);
   };
 
-  // 3. 打开编辑窗口
+  // 3. 打开编辑窗口 (保留原有功能)
   const handleEdit = (record) => {
     setEditingUser(record);
     // 回填表单数据
     form.setFieldsValue({
       username: record.username,
       role: record.role,
-      department: record.department, // 回填科室
+      department: record.department,
     });
     setIsModalOpen(true);
   };
 
-  // 4. 提交表单 (兼容新增和修改)
+  // 4. 删除用户逻辑 (新增功能)
+  const handleDelete = async (id) => {
+    try {
+      await request.delete(`/dashboard/users/${id}`);
+      message.success("删除成功");
+      fetchUsers(); // 刷新列表
+    } catch (error) {
+      console.error(error);
+      message.error("删除失败");
+    }
+  };
+
+  // 5. 提交表单 (兼容新增和修改)
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -66,7 +84,6 @@ const Users = () => {
 
       if (editingUser) {
         // === 编辑模式 (PUT) ===
-        // 注意：后端需要实现 PUT /dashboard/users/:id 接口
         await request.put(`/dashboard/users/${editingUser.id}`, {
           role: values.role,
           department: values.department,
@@ -101,7 +118,7 @@ const Users = () => {
     { label: "院区负责人 (Org Admin)", value: "org_admin" },
   ];
 
-  // 科室配置 (与挂号页面保持一致)
+  // 科室配置
   const departmentOptions = [
     { label: "内科 (Internal Med)", value: "内科" },
     { label: "外科 (Surgery)", value: "外科" },
@@ -173,13 +190,31 @@ const Users = () => {
       title: "操作",
       key: "action",
       render: (_, record) => (
-        <Button
-          type="link"
-          icon={<EditOutlined />}
-          onClick={() => handleEdit(record)}
-        >
-          编辑
-        </Button>
+        <Space>
+          {/* 1. 保留原有编辑按钮 */}
+          <Button
+            type="primary"
+            ghost
+            size="small"
+            icon={<EditOutlined />}
+            onClick={() => handleEdit(record)}
+          >
+            编辑
+          </Button>
+
+          {/* 2. 新增删除按钮 (带确认框) */}
+          <Popconfirm
+            title={`确定要删除用户 "${record.username}" 吗？`}
+            description="此操作不可恢复"
+            onConfirm={() => handleDelete(record.id)}
+            okText="删除"
+            cancelText="取消"
+          >
+            <Button type="text" danger size="small" icon={<DeleteOutlined />}>
+              删除
+            </Button>
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -220,7 +255,6 @@ const Users = () => {
             />
           </Form.Item>
 
-          {/* 只有新增时必填密码，编辑时可选（若不填则不改） */}
           <Form.Item
             name="password"
             label={editingUser ? "重置密码 (留空则不修改)" : "初始密码"}
@@ -237,7 +271,6 @@ const Users = () => {
             <Select placeholder="请选择角色" options={roleOptions} />
           </Form.Item>
 
-          {/* 级联显示：只有角色是医生时，才显示科室选择 */}
           {selectedRole === "doctor" && (
             <Form.Item
               name="department"
